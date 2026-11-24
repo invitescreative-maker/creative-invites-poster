@@ -14,8 +14,10 @@ except Exception:
     pass
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
-CHAT = os.environ.get('TELEGRAM_CHAT_ID', '')
+TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '').strip()
+CHAT = os.environ.get('TELEGRAM_CHAT_ID', '').strip()
+if not TOKEN or ':' not in TOKEN:
+    raise SystemExit(f'TELEGRAM_BOT_TOKEN secret looks wrong (length {len(TOKEN)}, has colon: {":" in TOKEN}). Re-add it in GitHub secrets.')
 API = f'https://api.telegram.org/bot{TOKEN}'
 
 
