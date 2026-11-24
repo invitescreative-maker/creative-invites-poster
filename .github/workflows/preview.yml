@@ -1,0 +1,30 @@
+name: Telegram preview
+
+on:
+  schedule:
+    - cron: '30 11 * * *'   # 11:30 UTC = 5:00 PM IST
+  workflow_dispatch:
+    inputs:
+      day:
+        description: 'Sheet day number to preview (leave empty = today)'
+        required: false
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Send preview
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DAY: ${{ github.event.inputs.day }}
+        run: |
+          if [ -n "$DAY" ]; then
+            python telegram_preview.py --day "$DAY"
+          else
+            python telegram_preview.py --today
+          fi

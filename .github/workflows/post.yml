@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       day:
-        description: 'Sheet day number to post (leave empty to post today by IST date)'
+        description: 'Sheet day number to post NOW, without Telegram approval (leave empty = today, needs approval)'
         required: false
 
 jobs:
@@ -21,10 +21,12 @@ jobs:
         env:
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           DAY: ${{ github.event.inputs.day }}
         run: |
           if [ -n "$DAY" ]; then
             python post_from_github.py --day "$DAY" --publish
           else
-            python post_from_github.py --today --publish
+            python post_from_github.py --today --publish --require-approval
           fi

@@ -64,6 +64,7 @@ def main():
     ap.add_argument('--today', action='store_true')
     ap.add_argument('--story')
     ap.add_argument('--publish', action='store_true')
+    ap.add_argument('--require-approval', action='store_true', help='only post if approved on Telegram')
     a = ap.parse_args()
     token, uid = os.environ.get('IG_ACCESS_TOKEN', ''), os.environ.get('IG_USER_ID', '')
     if a.story:
@@ -92,7 +93,17 @@ def main():
     print('Video URL:', url); print('--- caption ---'); print(caption); print('---------------')
     if not a.publish:
         print('DRY RUN only. Add --publish to post.'); return
+    if a.require_approval:
+        import telegram_preview as tp
+        status = tp.approval_status(row['Date'])
+        if status != 'approve':
+            msg = 'You skipped' if status == 'skip' else 'No approval received for'
+            print(f'{msg} {row["Date"]}: not posting.')
+            tp.send_text(f'{msg} the {row["Date"]} post, so nothing was posted today.')
+            return
     publish(url, caption, token, uid)
+    if a.require_approval:
+        tp.send_text(f'Posted to Instagram: {row["Cover text (hook)"]}')
 
 
 if __name__ == '__main__':
