@@ -1,0 +1,52 @@
+name: autopost
+
+on:
+  schedule:
+    # Wake-ups in IST (cron is UTC = IST - 5:30). The waiter stays awake while posts are due in the next 24 hours.
+    # 09:33, 12:33, 17:03, 19:33, 20:08 IST
+    - cron: "3 4 * * *"
+    - cron: "3 7 * * *"
+    - cron: "33 11 * * *"
+    - cron: "3 14 * * *"
+    - cron: "38 14 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["jobs/**"]
+
+# Only one run at a time -> no duplicate posts
+concurrency:
+  group: autopost
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Previews, approvals and posting
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "autopost-bot"
+          git config user.email "autopost-bot@users.noreply.github.com"
+          python -u waiter.py
+      - name: Save state
+        if: always()
+        run: |
+          git add -A jobs
+          [ -f state.json ] && git add state.json
+          git diff --cached --quiet || (git commit -m "autopost state" && git pull --rebase -q && git push)
